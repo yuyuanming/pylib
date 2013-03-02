@@ -9,10 +9,10 @@ import time
 base_url = 'http://code.activestate.com'
 recipe_base_url = 'http://code.activestate.com/recipes/langs/python/?page='
 recpie_suffix_url = '/download/1/'
-folder = 'recipes'
-total_page = 3 # keep it up-to-date 
+folder = 'tmp'
+total_page = 10 # keep it up-to-date 
 cnt = 0
-minitask = 5
+minitask = 10
 
 class store_recipe(threading.Thread):
     def __init__(self, q):
@@ -50,9 +50,14 @@ def handle_page(page):
     # get recpies list on current page
     html = urllib2.urlopen(recipe_base_url + str(page)).read()
     soup = bs4.BeautifulSoup(html)
-    recipes = [content.a['href'] 
-            for content in soup.findAll(attrs={'class':'recipe-title'})]
-    
+    global recipes
+    recipes.extend([content.a['href'] 
+            for content in soup.findAll(attrs={'class':'recipe-title'})])
+    print 'Done page ' + str(page) + '.'
+    print
+
+def muti_thread_download():
+    print len(recipes)
     q = Queue.Queue()
     for k in xrange(0, len(recipes), minitask):
         for i in range(minitask):
@@ -66,20 +71,11 @@ def handle_page(page):
         del t
     del q
 
-    #print recipes
-    '''
-    for url in recipes:
-        store_recipe(url)
-        t = threading.Thread(target=store_recipe, args=(url))
-        t.daemon = True
-        t.start()
-        '''
-
-    print 'Done page ' + str(page) + '.'
-    print
 
 if __name__=='__main__':
-    if not path.exists('recipes'): 
-        makedirs('recipes')
+    if not path.exists(folder): 
+        makedirs(folder)
+    recipes = []
     for i in range(1, total_page+1):
         handle_page(i)
+    muti_thread_download()
