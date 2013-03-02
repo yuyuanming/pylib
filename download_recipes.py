@@ -44,17 +44,24 @@ class store_recipe(threading.Thread):
             if is_open: fout.close()
             self.q.task_done()
 
-def handle_page(page):
-    print 'Start downloading page ' + str(page) + '.'
+class handle_page(threading.Thread):
+    def __init__(self, q):
+        threading.Thread.__init__(self)
+        self.q = q
 
-    # get recpies list on current page
-    html = urllib2.urlopen(recipe_base_url + str(page)).read()
-    soup = bs4.BeautifulSoup(html)
-    global recipes
-    recipes.extend([content.a['href'] 
-            for content in soup.findAll(attrs={'class':'recipe-title'})])
-    print 'Done page ' + str(page) + '.'
-    print
+    def run(self):
+        page = self.q.get()
+        #print 'Start downloading page ' + str(page) + '.'
+
+        # get recpies list on current page
+        html = urllib2.urlopen(recipe_base_url + str(page)).read()
+        soup = bs4.BeautifulSoup(html)
+        global recipes
+        recipes.extend([content.a['href'] 
+                for content in soup.findAll(attrs={'class':'recipe-title'})])
+        print 'Done fetch page ' + str(page) + '.'
+        print
+        self.q.task_done()
 
 def muti_thread_download():
     print len(recipes)
@@ -71,11 +78,21 @@ def muti_thread_download():
         del t
     del q
 
-
 if __name__=='__main__':
     if not path.exists(folder): 
         makedirs(folder)
     recipes = []
-    for i in range(1, total_page+1):
-        handle_page(i)
+    q = Queue.Queue()
+    for k in range(1, total_page+1, minitask):
+        for i in range(minitask):
+            t = handle_page(q)
+            t.setDaemon(True)
+            t.start()
+        for i in range(minitask):
+            q.put(k+i)
+        q.join()
+        q.queue.clear()
+        del t
+    del q
+
     muti_thread_download()

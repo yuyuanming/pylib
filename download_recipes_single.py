@@ -5,10 +5,9 @@ from os import path, makedirs
 base_url = 'http://code.activestate.com'
 recipe_base_url = 'http://code.activestate.com/recipes/langs/python/?page='
 recpie_suffix_url = '/download/1/'
-folder = 'recipes'
-total_page = 199 # keep it up-to-date 
+folder = 'tmp'
+total_page = 10 # keep it up-to-date 
 cnt = 0
-minitask = 5
 
 def store_recipe(url):
     try:
@@ -47,7 +46,7 @@ def handle_page(page):
     print
 
 if __name__=='__main__':
-    if not path.exists('recipes'): 
-        makedirs('recipes')
-    for i in range(1, 10):
+    if not path.exists(folder): 
+        makedirs(folder)
+    for i in range(1, total_page+1):
         handle_page(i)
