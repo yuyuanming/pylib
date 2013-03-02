@@ -10,7 +10,7 @@ base_url = 'http://code.activestate.com'
 recipe_base_url = 'http://code.activestate.com/recipes/langs/python/?page='
 recpie_suffix_url = '/download/1/'
 folder = 'recipes'
-total_page = 199 # keep it up-to-date 
+total_page = 3 # keep it up-to-date 
 cnt = 0
 minitask = 5
 
@@ -25,7 +25,9 @@ class store_recipe(threading.Thread):
             url = url.split('?')[0]
 
             fn = folder + '/' + url[9:-1]+'.py'
-            #if path.exists(fn): return
+            is_open = False
+            if path.exists(fn): return
+            is_open = True
 
             html = urllib2.urlopen(base_url + url + recpie_suffix_url).read()
             fout = open(fn, 'w')
@@ -39,7 +41,7 @@ class store_recipe(threading.Thread):
         finally:
             cnt = cnt + 1
             print str(cnt)+"(" + str(threading.active_count())+")", url
-            fout.close()
+            if is_open: fout.close()
             self.q.task_done()
 
 def handle_page(page):
@@ -79,6 +81,5 @@ def handle_page(page):
 if __name__=='__main__':
     if not path.exists('recipes'): 
         makedirs('recipes')
-    handle_page(1)
-    for i in range(1, 10):
+    for i in range(1, total_page+1):
         handle_page(i)
